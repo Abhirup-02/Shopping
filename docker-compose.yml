@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
 
   products:
@@ -11,7 +11,7 @@ services:
     restart: always
     volumes:
       - .:/app
-      - /app/Products/node_modules
+      - /app/products/node_modules
 
   shopping:
     build:
@@ -23,7 +23,7 @@ services:
     restart: always
     volumes:
       - .:/app
-      - /app/Shopping/node_modules
+      - /app/shopping/node_modules
 
   customer:
     build:
@@ -35,12 +35,12 @@ services:
     restart: always
     volumes:
       - .:/app
-      - /app/Customer/node_modules
+      - /app/customer/node_modules
 
   nginx-proxy:
     build: 
       dockerfile: Dockerfile
-      context: ./Reverse Proxy
+      context: ./Reverse_Proxy
     depends_on:
       - products
       - shopping
