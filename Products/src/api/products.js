@@ -1,13 +1,26 @@
 const { CUSTOMER_BINDING_KEY, SHOPPING_BINDING_KEY } = require('../config')
 const ProductService = require('../services/product-service')
-const { PublishMessage } = require('../utils')
+const { RPC_Observer } = require('../utils')
 const UserAuth = require('./middlewares/auth')
-// const { PublishCustomerEvent, PublishShoppingEvent } = require('../utils')
+// const { PublishCustomerEvent, PublishShoppingEvent, PublishMessage } = require('../utils')
 
 
 module.exports = (app, channel) => {
 
     const service = new ProductService()
+
+    RPC_Observer('PRODUCT_RPC', service)
+
+    app.get('/', async (req, res, next) => {
+        try {
+            const { data } = await service.GetProducts()
+            return res.status(200).json(data)
+        }
+        catch (err) {
+            next(err)
+        }
+
+    })
 
     app.post('/product/create', async (req, res, next) => {
 
@@ -67,105 +80,95 @@ module.exports = (app, channel) => {
 
     })
 
-    app.put('/wishlist', UserAuth, async (req, res, next) => {
 
-        const { _id } = req.user
+    // app.put('/wishlist', UserAuth, async (req, res, next) => {
 
-        // Get payload to send to Customer Service 
-        try {
-            const { data } = await service.GetProductPayload(_id, { productId: req.body._id }, 'ADD_TO_WISHLIST')
+    //     const { _id } = req.user
 
-            // PublishCustomerEvent(data)
+    //     // Get payload to send to Customer Service 
+    //     try {
+    //         const { data } = await service.GetProductPayload(_id, { productId: req.body._id }, 'ADD_TO_WISHLIST')
 
-            PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
+    //         // PublishCustomerEvent(data)
 
-            return res.status(200).json(data.data.product)
-        }
-        catch (err) {
-            next(err)
-        }
-    })
+    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
+
+    //         return res.status(200).json(data.data.product)
+    //     }
+    //     catch (err) {
+    //         next(err)
+    //     }
+    // })
     
-    app.delete('/wishlist/:id', UserAuth, async (req, res, next) => {
+    // app.delete('/wishlist/:id', UserAuth, async (req, res, next) => {
 
-        const { _id } = req.user
-        const productId = req.params.id
+    //     const { _id } = req.user
+    //     const productId = req.params.id
 
-        try {
-            const { data } = await service.GetProductPayload(_id, { productId }, 'REMOVE_FROM_WISHLIST')
+    //     try {
+    //         const { data } = await service.GetProductPayload(_id, { productId }, 'REMOVE_FROM_WISHLIST')
 
-            // PublishCustomerEvent(data)
+    //         // PublishCustomerEvent(data)
 
-            PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
+    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
 
-            return res.status(200).json(data.data.product)
-        }
-        catch (err) {
-            next(err)
-        }
-    })
+    //         return res.status(200).json(data.data.product)
+    //     }
+    //     catch (err) {
+    //         next(err)
+    //     }
+    // })
 
 
-    app.put('/cart', UserAuth, async (req, res, next) => {
+    // app.put('/cart', UserAuth, async (req, res, next) => {
 
-        const { _id } = req.user
+    //     const { _id } = req.user
 
-        try {
-            const { data } = await service.GetProductPayload(_id, { productId: req.body._id, qty: req.body.qty }, 'ADD_TO_CART')
+    //     try {
+    //         const { data } = await service.GetProductPayload(_id, { productId: req.body._id, qty: req.body.qty }, 'ADD_TO_CART')
 
-            // PublishCustomerEvent(data)
-            // PublishShoppingEvent(data)
+    //         // PublishCustomerEvent(data)
+    //         // PublishShoppingEvent(data)
 
-            PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-            PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
+    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
+    //         PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
 
-            const response = {
-                product: data.data.product,
-                unit: data.data.qty
-            }
+    //         const response = {
+    //             product: data.data.product,
+    //             unit: data.data.qty
+    //         }
 
-            return res.status(200).json(response)
-        }
-        catch (err) {
-            next(err)
-        }
-    })
+    //         return res.status(200).json(response)
+    //     }
+    //     catch (err) {
+    //         next(err)
+    //     }
+    // })
 
-    app.delete('/cart/:id', UserAuth, async (req, res, next) => {
+    // app.delete('/cart/:id', UserAuth, async (req, res, next) => {
 
-        const { _id } = req.user
+    //     const { _id } = req.user
 
-        try {
-            const { data } = await service.GetProductPayload(_id, { productId: req.params.id, qty: 0 }, 'REMOVE_FROM_CART')
+    //     try {
+    //         const { data } = await service.GetProductPayload(_id, { productId: req.params.id, qty: 0 }, 'REMOVE_FROM_CART')
 
-            // PublishCustomerEvent(data)
-            // PublishShoppingEvent(data)
+    //         // PublishCustomerEvent(data)
+    //         // PublishShoppingEvent(data)
 
-            PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-            PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
+    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
+    //         PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
 
-            const response = {
-                product: data.data.product,
-                unit: data.data.qty
-            }
+    //         const response = {
+    //             product: data.data.product,
+    //             unit: data.data.qty
+    //         }
 
-            return res.status(200).json(response)
-        }
-        catch (err) {
-            next(err)
-        }
-    })
+    //         return res.status(200).json(response)
+    //     }
+    //     catch (err) {
+    //         next(err)
+    //     }
+    // })
 
     // GET All products and category
-    app.get('/', async (req, res, next) => {
-        try {
-            const { data } = await service.GetProducts()
-            return res.status(200).json(data)
-        }
-        catch (err) {
-            next(err)
-        }
-
-    })
-
 }

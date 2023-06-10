@@ -93,7 +93,20 @@ class ProductService {
             return FormateData(payload)
         }
         else {
-            return FormateData({error: 'No product available'})
+            return FormateData({ error: 'No product available' })
+        }
+    }
+
+    // RPC response
+    async serveRPC_Request(payload) {
+        const { type, data } = payload
+        switch (type) {
+            case 'VIEW_PRODUCT':
+                return this.repository.FindById(data)
+            case 'VIEW_PRODUCTS':
+                return this.repository.FindSelectedProducts(data)
+            default:
+                break
         }
     }
 

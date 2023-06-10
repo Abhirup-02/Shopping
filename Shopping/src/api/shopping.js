@@ -6,7 +6,52 @@ const UserAuth = require('./middlewares/auth')
 module.exports = (app, channel) => {
 
     const service = new ShoppingService()
+
     SubscribeMessage(channel, service)
+
+
+    app.post('/cart', UserAuth, async (req, res, next) => {
+        const { _id } = req.user
+        const { productId, qty } = req.body
+        try {
+            const { data } = await service.AddCartItem(_id, productId, qty)
+            
+            return res.status(200).json(data)
+        }   
+        catch (err) {
+            next(err)
+        }
+    })
+
+    app.delete('/cart/:id', UserAuth, async (req, res, next) => {
+        const { _id } = req.user
+        const productId = req.params.id
+        try {
+            const { data } = await service.RemoveCartItem(_id, productId)
+
+            return res.status(200).json(data)
+        }
+        catch (err) {
+            next(err)
+        }
+    })
+
+    
+    app.get('/cart', UserAuth, async (req, res, next) => {
+
+        const { _id } = req.user
+        try {
+            const data = await service.GetCart(_id)
+
+            return res.status(200).json(data)
+        }
+        catch (err) {
+            next(err)
+        }
+    })
+
+
+    /* ORDERS */
 
     app.post('/order', UserAuth, async (req, res, next) => {
 
@@ -49,17 +94,4 @@ module.exports = (app, channel) => {
 
     })
 
-
-    app.get('/cart', UserAuth, async (req, res, next) => {
-
-        const { _id } = req.user
-        try {
-            const { data } = await service.GetCart(_id)
-
-            return res.status(200).json(data)
-        }
-        catch (err) {
-            next(err)
-        }
-    })
 }

@@ -1,5 +1,6 @@
 const { ShoppingRepository } = require("../database")
-const { FormateData } = require("../utils")
+const { CartModel } = require("../database/models")
+const { FormateData, RPC_Request } = require("../utils")
 
 
 
@@ -9,16 +10,37 @@ class ShoppingService {
   }
 
 
+  async AddCartItem(customerId, product_id, qty) {
+    // Grab product info from Product-Service through RPC
+    const productResponse = await RPC_Request('PRODUCT_RPC', {
+      type: 'VIEW_PRODUCT',
+      data: product_id
+    })
+    
+    if (productResponse && productResponse._id) {
+      const data = await this.repository.ManageCart(customerId, productResponse, qty)
+
+      return data
+    }
+
+    throw new Error('Product not Found')
+  }
+
+  async RemoveCartItem(customerId, product_id) {
+    return await this.repository.ManageCart(customerId, { _id: product_id }, 0, true)
+  }
+
   async GetCart(_id) {
     try {
-      const cartItems = await this.repository.Cart(_id)
-
-      return FormateData(cartItems)
+      return this.repository.Cart(_id)
     }
     catch (err) {
       throw err
     }
   }
+
+
+  /* ORDERS */
 
   async PlaceOrder(userInput) {
     const { _id, txnNumber } = userInput

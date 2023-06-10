@@ -51,7 +51,6 @@ module.exports.FormateData = (data) => {
 
 /* --------------------------- Message Broker  ------------------------  */
 
-// Create a channel
 module.exports.CreateChannel = async () => {
   try {
     const connection = await amqplib.connect(MESSAGE_BROKER_URL)
@@ -64,7 +63,6 @@ module.exports.CreateChannel = async () => {
   }
 }
 
-// Subscribe messages
 module.exports.SubscribeMessage = async (channel, service) => {
 
   const appQueue = await channel.assertQueue(QUEUE_NAME)
@@ -72,10 +70,18 @@ module.exports.SubscribeMessage = async (channel, service) => {
   channel.bindQueue(appQueue.queue, EXCHANGE_NAME, CUSTOMER_BINDING_KEY)
 
   channel.consume(appQueue.queue, (data) => {
-    // console.log('Received Data in Customer Service')
-    // console.log(data.content.toString())
 
     service.SubscribeEvents(data.content.toString())
     channel.ack(data)
   })
+}
+
+
+module.exports.PublishMessage = async (channel, routing_key, message) => {
+  try {
+    await channel.publish(EXCHANGE_NAME, routing_key, Buffer.from(message))
+  }
+  catch (err) {
+    throw err
+  }
 }

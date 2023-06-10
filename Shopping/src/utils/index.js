@@ -1,11 +1,12 @@
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const amqplib = require('amqplib')
-// const axios = require('axios')
+const { v4: uuid4 } = require('uuid')
 
-const { APP_SECRET, MESSAGE_BROKER_URL, EXCHANGE_NAME, QUEUE_NAME, SHOPPING_BINDING_KEY  } = require("../config")
 
-// Utility functions
+const { APP_SECRET, MESSAGE_BROKER_URL, EXCHANGE_NAME, QUEUE_NAME, SHOPPING_BINDING_KEY } = require("../config")
+
+
 module.exports.GenerateSalt = async () => {
   return await bcrypt.genSalt()
 }
@@ -53,20 +54,23 @@ module.exports.FormateData = (data) => {
 }
 
 
-/* Webhook */
-// module.exports.PublishCustomerEvent = async (payload) => {
-//   axios.post('http://localhost:8000/customer/app-events', { payload })
-// }
-
 
 /* --------------------------- Message Broker  ------------------------  */
 
-// Create a channel
+let amqplibConnection = null
+
+const getChannel = async () => {
+  if (amqplibConnection === null) {
+    amqplibConnection = await amqplib.connect(MESSAGE_BROKER_URL)
+  }
+  return await amqplibConnection.createChannel()
+}
+
 module.exports.CreateChannel = async () => {
   try {
-    const connection = await amqplib.connect(MESSAGE_BROKER_URL)
-    const channel = await connection.createChannel()
-    await channel.assertExchange(EXCHANGE_NAME, 'direct', false)
+    const channel = await getChannel()
+    // await channel.assertExchange(EXCHANGE_NAME, 'direct', false)
+    await channel.assertQueue(EXCHANGE_NAME, 'direct', { durable: true })
     return channel
   }
   catch (err) {
@@ -74,28 +78,71 @@ module.exports.CreateChannel = async () => {
   }
 }
 
-// Publish messages
 module.exports.PublishMessage = async (channel, routing_key, message) => {
   try {
     await channel.publish(EXCHANGE_NAME, routing_key, Buffer.from(message))
-    // console.log('Message has been sent from Shopping service')
   }
   catch (err) {
     throw err
   }
 }
 
-// Subscribe messages
 module.exports.SubscribeMessage = async (channel, service) => {
   const appQueue = await channel.assertQueue(QUEUE_NAME)
 
   channel.bindQueue(appQueue.queue, EXCHANGE_NAME, SHOPPING_BINDING_KEY)
 
   channel.consume(appQueue.queue, (data) => {
-    // console.log('Received Data in Shopping service')
-    // console.log(data.content.toString())
-
     service.SubscribeEvents(data.content.toString())
     channel.ack(data)
   })
+}
+
+
+const requestData = async (RPC_QUEUE_NAME, requestPayload, uuid) => {
+
+  const channel = await getChannel()
+
+  const Q = await channel.assertQueue("", { exclusive: true })
+
+  channel.sendToQueue(
+    RPC_QUEUE_NAME,
+    Buffer.from(JSON.stringify(requestPayload)),
+    {
+      replyTo: Q.queue,
+      correlationId: uuid
+    }
+  )
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      channel.close()
+      resolve('API Timeout')
+    }, 8000)
+
+
+    channel.consume(
+      Q.queue,
+      (msg) => {
+        if (msg.properties.correlationId == uuid) {
+          resolve(JSON.parse(msg.content.toString()))
+          clearTimeout(timeout)
+        }
+        else {
+          reject('Data not found')
+        }
+      },
+      {
+        noAck: true
+      }
+    )
+  })
+}
+
+
+module.exports.RPC_Request = async (RPC_QUEUE_NAME, requestPayload) => {
+
+  const uuid = uuid4() // correlationId
+
+  return await requestData(RPC_QUEUE_NAME, requestPayload, uuid)
 }
