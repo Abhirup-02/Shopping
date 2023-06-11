@@ -63,20 +63,6 @@ module.exports.CreateChannel = async () => {
   }
 }
 
-module.exports.SubscribeMessage = async (channel, service) => {
-
-  const appQueue = await channel.assertQueue(QUEUE_NAME)
-
-  channel.bindQueue(appQueue.queue, EXCHANGE_NAME, CUSTOMER_BINDING_KEY)
-
-  channel.consume(appQueue.queue, (data) => {
-
-    service.SubscribeEvents(data.content.toString())
-    channel.ack(data)
-  })
-}
-
-
 module.exports.PublishMessage = async (channel, routing_key, message) => {
   try {
     await channel.publish(EXCHANGE_NAME, routing_key, Buffer.from(message))

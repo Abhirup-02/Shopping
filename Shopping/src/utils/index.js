@@ -78,14 +78,6 @@ module.exports.CreateChannel = async () => {
   }
 }
 
-module.exports.PublishMessage = async (channel, routing_key, message) => {
-  try {
-    await channel.publish(EXCHANGE_NAME, routing_key, Buffer.from(message))
-  }
-  catch (err) {
-    throw err
-  }
-}
 
 module.exports.SubscribeMessage = async (channel, service) => {
   const appQueue = await channel.assertQueue(QUEUE_NAME)

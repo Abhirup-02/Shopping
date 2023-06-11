@@ -1,16 +1,16 @@
-const { CUSTOMER_BINDING_KEY, SHOPPING_BINDING_KEY } = require('../config')
 const ProductService = require('../services/product-service')
 const { RPC_Observer } = require('../utils')
 const UserAuth = require('./middlewares/auth')
-// const { PublishCustomerEvent, PublishShoppingEvent, PublishMessage } = require('../utils')
 
 
-module.exports = (app, channel) => {
+
+module.exports = (app) => {
 
     const service = new ProductService()
 
     RPC_Observer('PRODUCT_RPC', service)
 
+    // GET All products and category
     app.get('/', async (req, res, next) => {
         try {
             const { data } = await service.GetProducts()
@@ -22,12 +22,12 @@ module.exports = (app, channel) => {
 
     })
 
-    app.post('/product/create', async (req, res, next) => {
+    app.post('/product/create', UserAuth, async (req, res, next) => {
 
         try {
             const { name, desc, type, unit, price, available, suplier, banner } = req.body
             const { data } = await service.CreateProduct({ name, desc, type, unit, price, available, suplier, banner })
-            
+
             return res.json(data)
         }
         catch (err) {
@@ -67,108 +67,14 @@ module.exports = (app, channel) => {
     })
 
     app.post('/ids', async (req, res, next) => {
-
+        const { IDs } = req.body
+         
         try {
-            const { ids } = req.body
-            const products = await service.GetSelectedProducts(ids)
+            const products = await service.GetSelectedProducts(IDs)
             return res.status(200).json(products)
-
         }
         catch (err) {
             next(err)
         }
-
     })
-
-
-    // app.put('/wishlist', UserAuth, async (req, res, next) => {
-
-    //     const { _id } = req.user
-
-    //     // Get payload to send to Customer Service 
-    //     try {
-    //         const { data } = await service.GetProductPayload(_id, { productId: req.body._id }, 'ADD_TO_WISHLIST')
-
-    //         // PublishCustomerEvent(data)
-
-    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-
-    //         return res.status(200).json(data.data.product)
-    //     }
-    //     catch (err) {
-    //         next(err)
-    //     }
-    // })
-    
-    // app.delete('/wishlist/:id', UserAuth, async (req, res, next) => {
-
-    //     const { _id } = req.user
-    //     const productId = req.params.id
-
-    //     try {
-    //         const { data } = await service.GetProductPayload(_id, { productId }, 'REMOVE_FROM_WISHLIST')
-
-    //         // PublishCustomerEvent(data)
-
-    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-
-    //         return res.status(200).json(data.data.product)
-    //     }
-    //     catch (err) {
-    //         next(err)
-    //     }
-    // })
-
-
-    // app.put('/cart', UserAuth, async (req, res, next) => {
-
-    //     const { _id } = req.user
-
-    //     try {
-    //         const { data } = await service.GetProductPayload(_id, { productId: req.body._id, qty: req.body.qty }, 'ADD_TO_CART')
-
-    //         // PublishCustomerEvent(data)
-    //         // PublishShoppingEvent(data)
-
-    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-    //         PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
-
-    //         const response = {
-    //             product: data.data.product,
-    //             unit: data.data.qty
-    //         }
-
-    //         return res.status(200).json(response)
-    //     }
-    //     catch (err) {
-    //         next(err)
-    //     }
-    // })
-
-    // app.delete('/cart/:id', UserAuth, async (req, res, next) => {
-
-    //     const { _id } = req.user
-
-    //     try {
-    //         const { data } = await service.GetProductPayload(_id, { productId: req.params.id, qty: 0 }, 'REMOVE_FROM_CART')
-
-    //         // PublishCustomerEvent(data)
-    //         // PublishShoppingEvent(data)
-
-    //         PublishMessage(channel, CUSTOMER_BINDING_KEY, JSON.stringify(data))
-    //         PublishMessage(channel, SHOPPING_BINDING_KEY, JSON.stringify(data))
-
-    //         const response = {
-    //             product: data.data.product,
-    //             unit: data.data.qty
-    //         }
-
-    //         return res.status(200).json(response)
-    //     }
-    //     catch (err) {
-    //         next(err)
-    //     }
-    // })
-
-    // GET All products and category
 }

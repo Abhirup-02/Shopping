@@ -1,8 +1,9 @@
-const { ProductModel } = require("../models")
-const { APIError, BadRequestError } = require("../../utils/app-errors")
+const { ProductModel } = require('../models')
+const { APIError } = require('../../utils/app-errors')
 
-//Dealing with data base operations
+
 class ProductRepository {
+
   async CreateProduct({ name, desc, type, unit, price, available, suplier, banner }) {
     try {
       const product = new ProductModel({ name, desc, type, unit, price, available, suplier, banner })
@@ -11,7 +12,7 @@ class ProductRepository {
       return productResult
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Create Product")
+      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Create Product')
     }
   }
 
@@ -20,7 +21,7 @@ class ProductRepository {
       return await ProductModel.find()
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Get Products")
+      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Get Products')
     }
   }
 
@@ -29,7 +30,7 @@ class ProductRepository {
       return await ProductModel.findById(id)
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Find Product")
+      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Product')
     }
   }
 
@@ -39,20 +40,20 @@ class ProductRepository {
       return products
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Find Category")
+      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Category')
     }
   }
 
   async FindSelectedProducts(selectedIds) {
     try {
       const products = await ProductModel.find()
-        .where("_id")
+        .where('_id')
         .in(selectedIds.map((_id) => _id))
         .exec()
       return products
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Find Product")
+      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Product')
     }
   }
 }

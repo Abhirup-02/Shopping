@@ -1,5 +1,4 @@
 const amqplib = require('amqplib')
-const { v4: uuid4 } = require('uuid')
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 

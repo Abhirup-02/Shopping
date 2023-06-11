@@ -1,7 +1,6 @@
 const express = require('express')
 const cors  = require('cors')
-const { shopping, appEvents } = require('./api')
-const HandleErrors = require('./utils/error-handler')
+const { shopping } = require('./api')
 
 
 module.exports = async (app, channel) => {
@@ -11,13 +10,7 @@ module.exports = async (app, channel) => {
     app.use(cors())
     app.use(express.static(__dirname + '/public'))
 
-    // Listen to Events
-    // appEvents(app)
 
     // API
     shopping(app, channel)
-
-    // Error handling
-    app.use(HandleErrors)
-    
 }

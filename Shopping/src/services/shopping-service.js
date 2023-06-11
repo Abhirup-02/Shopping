@@ -1,6 +1,6 @@
-const { ShoppingRepository } = require("../database")
-const { CartModel } = require("../database/models")
-const { FormateData, RPC_Request } = require("../utils")
+const { ShoppingRepository } = require('../database')
+const { RPC_Request } = require('../utils')
+const { APIError } = require('../utils/app-errors')
 
 
 
@@ -11,14 +11,15 @@ class ShoppingService {
 
 
   async AddCartItem(customerId, product_id, qty) {
-    // Grab product info from Product-Service through RPC
+    /* Grab product info from Product-Service through RPC */
     const productResponse = await RPC_Request('PRODUCT_RPC', {
       type: 'VIEW_PRODUCT',
       data: product_id
     })
-    
+    // console.log(productResponse)
+
     if (productResponse && productResponse._id) {
-      const data = await this.repository.ManageCart(customerId, productResponse, qty)
+      const data = await this.repository.ManageCart(customerId, productResponse, qty, false)
 
       return data
     }
@@ -39,75 +40,69 @@ class ShoppingService {
     }
   }
 
+  async AddToWishlist(customerId, product_id) {
+    return await this.repository.ManageWishlist(customerId, product_id)
+  }
 
-  /* ORDERS */
+  async RemoveFromWishlist(customerId, product_id) {
+    return await this.repository.ManageWishlist(customerId, product_id, true)
+  }
 
-  async PlaceOrder(userInput) {
-    const { _id, txnNumber } = userInput
+  async GetWishlist(customerId) {
+    // Perform RPC call
+    const { products } = await this.repository.Wishlist(customerId)
+    if (Array.isArray(products)) {
+      const ids = products.map((_id) => _id)
+      const productResponse = await RPC_Request('PRODUCT_RPC', {
+        type: 'VIEW_PRODUCTS',
+        data: ids
+      })
 
+      if (productResponse) {
+        return productResponse
+      }
+    }
+
+    return {}
+  }
+
+  async CreateOrder(customerId, txnNumber) {
     // Verify the txnNumber with payment logs
+    return await this.repository.CreateNewOrder(customerId, txnNumber)
+  }
 
+  async GetOrder(orderId) {
     try {
-      const orderResult = await this.repository.CreateNewOrder(_id, txnNumber)
-      return FormateData(orderResult)
+      return await this.repository.Orders('', orderId)
     }
     catch (err) {
-      throw new APIError("Data Not found", err)
+      throw new APIError('Data Not found')
     }
   }
 
   async GetOrders(customerId) {
     try {
-      const orders = await this.repository.Orders(customerId)
-      return FormateData(orders)
+      return await this.repository.Orders(customerId)
     }
     catch (err) {
-      throw new APIError("Data Not found", err)
+      throw new APIError('Data Not found')
     }
   }
 
-  async ManageCart(customerId, item, qty, isRemove) {
-
-    const cartResult = await this.repository.AddCartItem(customerId, item, qty, isRemove)
-
-    return FormateData(cartResult)
-  }
 
   async SubscribeEvents(payload) {
-
     payload = JSON.parse(payload)
-
     const { event, data } = payload
 
-    const { userId, product, qty } = data
-
     switch (event) {
-      case 'ADD_TO_CART':
-        this.ManageCart(userId, product, qty, false)
-        break
-      case 'REMOVE_FROM_CART':
-        this.ManageCart(userId, product, qty, true)
+      case 'DELETE_PROFILE':
+        await this.repository.DeleteProfileData(data.userId)
         break
       default:
         break
     }
-
   }
 
-
-  async GetOrderPayload(userId, order, event) {
-
-    if (order) {
-      const payload = {
-        event,
-        data: { userId, order }
-      }
-      return payload
-    }
-    else {
-      return FormateData({ error: 'No Order available' })
-    }
-  }
 }
 
 module.exports = ShoppingService
