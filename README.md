@@ -1,6 +1,5 @@
 # Shopping Microservices
 
--> Using Event Sourcing Architecture
 
 -> Follow CQRS with Event Sourcing -
 [https://dzone.com/articles/microservices-with-cqrs-and-event-sourcing]
@@ -10,3 +9,4 @@
   <li>Revoke redundant data from services/DB</li>
   <li>Isolate DB instance with special access to perform DBA operations.</li>
 </ul
+![CQRS](https://github.com/Abhirup-02/Shopping/assets/92736753/f054b35f-1d88-4544-9bdb-63d009d6689a)
