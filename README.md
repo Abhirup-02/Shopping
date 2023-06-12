@@ -15,3 +15,10 @@
 
 
 ![CQRS](https://github.com/Abhirup-02/Shopping/assets/92736753/0e063b11-1a71-43d3-b7e9-1b9dd10bf9ac)  
+
+
+
+<hr>
+<h2>Error handling Flowchart</h2>
+
+![Errors](https://github.com/Abhirup-02/Shopping/assets/92736753/7715ccf3-9ccb-4b79-bd80-53362ccb6c06)
