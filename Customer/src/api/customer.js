@@ -16,7 +16,7 @@ module.exports = (app, channel) => {
       return res.status(201).json(data)
     }
     catch (err) {
-      next(err)
+      return res.status(500).json(err)
     }
   })
 
@@ -27,7 +27,7 @@ module.exports = (app, channel) => {
       return res.status(200).json(data)
     }
     catch (err) {
-      next(err)
+      return res.status(500).json(err)
     }
   })
 

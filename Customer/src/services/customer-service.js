@@ -1,6 +1,6 @@
 const { CustomerRepository } = require("../database")
 const { FormateData, GeneratePassword, GenerateSalt, GenerateSignature, ValidatePassword } = require('../utils')
-const { APIError, STATUS_CODES } = require('../utils/app-errors')
+const { APIError, STATUS_CODES } = require('../utils/errors/app-errors')
 
 
 
@@ -54,7 +54,7 @@ class CustomerService {
             return FormateData({ id: existingCustomer._id, token })
 
         } catch (err) {
-            throw new APIError('Data Not found', err)
+            throw new APIError('Data Not found', STATUS_CODES.INTERNAL_ERROR)
         }
 
     }
