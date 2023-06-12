@@ -15,7 +15,6 @@ module.exports = (app, channel) => {
         const { productId, qty } = req.body
         try {
             const data = await service.AddCartItem(_id, productId, qty)
-
             return res.status(200).json(data)
         }
         catch (err) {
@@ -42,7 +41,6 @@ module.exports = (app, channel) => {
         const { _id } = req.user
         try {
             const data = await service.GetCart(_id)
-
             return res.status(200).json(data)
         }
         catch (err) {

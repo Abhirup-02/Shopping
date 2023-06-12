@@ -1,6 +1,6 @@
 const { OrderModel, CartModel, WishlistModel } = require('../models')
 const { v4: uuidv4 } = require('uuid')
-const { APIError, STATUS_CODES } = require('../../utils/app-errors')
+const { APIError } = require('../../utils/errors/app-errors')
 const _ = require('lodash')
 
 
@@ -11,35 +11,40 @@ class ShoppingRepository {
         return CartModel.findOne({ customerId })
     }
 
-    async ManageCart(customerId, product, qty, isRemove) {
-        const cart = await CartModel.findOne({ customerId })
+    async ManageCart(customerId, product, qty, isRemove = false) {
+        try {
+            const cart = await CartModel.findOne({ customerId })
 
-        if (cart) {
-            if (isRemove) {
-                const cartItems = _.filter(
-                    cart.items,
-                    (item) => item.product._id !== product._id
-                )
-                cart.items = cartItems
-            }
-            else {
-                const cartIndex = _.findIndex(cart.items, { product: { _id: product._id } })
-
-                if (cartIndex > -1) {
-                    cart.items[cartIndex].unit = qty
+            if (cart) {
+                if (isRemove) {
+                    const cartItems = _.filter(
+                        cart.items,
+                        (item) => item.product._id !== product._id
+                    )
+                    cart.items = cartItems
                 }
                 else {
-                    cart.items.push({ product: { ...product }, unit: qty })
+                    const cartIndex = _.findIndex(cart.items, { product: { _id: product._id } })
+
+                    if (cartIndex > -1) {
+                        cart.items[cartIndex].unit = qty
+                    }
+                    else {
+                        cart.items.push({ product: { ...product }, unit: qty })
+                    }
                 }
+                return await cart.save()
             }
-            return await cart.save()
+            else {
+                // Create a new Cart
+                return await CartModel.create({
+                    customerId,
+                    items: [{ product: { ...product }, unit: qty }]
+                })
+            }
         }
-        else {
-            // Create a new Cart
-            return await CartModel.create({
-                customerId,
-                items: [{ product: { ...product }, unit: qty }]
-            })
+        catch (err) {
+            throw new APIError('DB: Unable to Manage Cart')
         }
     }
 

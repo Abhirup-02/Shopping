@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const amqplib = require('amqplib')
 
-const { APP_SECRET, MESSAGE_BROKER_URL, EXCHANGE_NAME, QUEUE_NAME, CUSTOMER_BINDING_KEY } = require("../config")
+const { APP_SECRET, MESSAGE_BROKER_URL, EXCHANGE_NAME } = require("../config")
 
 
 module.exports.GenerateSalt = async () => {
@@ -22,29 +22,18 @@ module.exports.GenerateSignature = async (payload) => {
     return await jwt.sign(payload, APP_SECRET, { expiresIn: "30d" })
   }
   catch (error) {
-    console.log(error)
     return error
   }
 }
 
 module.exports.ValidateSignature = async (req) => {
   try {
-    const signature = req.get("Authorization")
-    // console.log(signature)
-    const payload = await jwt.verify(signature.split(" ")[1], APP_SECRET)
+    const token = req.headers.authorization.split(' ')[1]
+    const payload = jwt.verify(token, APP_SECRET)
     req.user = payload
     return true
   } catch (error) {
-    console.log(error)
     return false
-  }
-}
-
-module.exports.FormateData = (data) => {
-  if (data) {
-    return { data }
-  } else {
-    throw new Error("Data Not found!")
   }
 }
 

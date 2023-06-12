@@ -34,22 +34,12 @@ module.exports.GenerateSignature = async (payload) => {
 
 module.exports.ValidateSignature = async (req) => {
   try {
-    const signature = req.get("Authorization")
-    // console.log(signature)
-    const payload = await jwt.verify(signature.split(" ")[1], APP_SECRET)
+    const token = req.headers.authorization.split(' ')[1]
+    const payload = jwt.verify(token, APP_SECRET)
     req.user = payload
     return true
   } catch (error) {
-    console.log(error)
     return false
-  }
-}
-
-module.exports.FormateData = (data) => {
-  if (data) {
-    return { data }
-  } else {
-    throw new Error("Data Not found!")
   }
 }
 
@@ -92,10 +82,8 @@ module.exports.SubscribeMessage = async (channel, service) => {
 
 
 const requestData = async (RPC_QUEUE_NAME, requestPayload, uuid) => {
-
   const channel = await getChannel()
-
-  const Q = await channel.assertQueue("", { exclusive: true })
+  const Q = await channel.assertQueue('', { exclusive: true })
 
   channel.sendToQueue(
     RPC_QUEUE_NAME,

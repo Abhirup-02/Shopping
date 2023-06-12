@@ -1,6 +1,7 @@
 const { ShoppingRepository } = require('../database')
 const { RPC_Request } = require('../utils')
-const { APIError } = require('../utils/app-errors')
+const { NotFoundError } = require('../utils/errors/app-errors')
+const _ = require('lodash')
 
 
 
@@ -12,19 +13,21 @@ class ShoppingService {
 
   async AddCartItem(customerId, product_id, qty) {
     /* Grab product info from Product-Service through RPC */
-    const productResponse = await RPC_Request('PRODUCT_RPC', {
-      type: 'VIEW_PRODUCT',
-      data: product_id
-    })
-    // console.log(productResponse)
+    const productResponse = await RPC_Request('PRODUCT_RPC',
+      {
+        type: 'VIEW_PRODUCT',
+        data: product_id
+      }
+    )
 
-    if (productResponse && productResponse._id) {
-      const data = await this.repository.ManageCart(customerId, productResponse, qty, false)
+
+    if (_.isObject(productResponse) && productResponse._id) {
+      const data = await this.repository.ManageCart(customerId, productResponse, qty)
 
       return data
     }
 
-    throw new Error('Product not Found')
+    throw new NotFoundError('Product not Found')
   }
 
   async RemoveCartItem(customerId, product_id) {

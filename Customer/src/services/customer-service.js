@@ -1,6 +1,6 @@
 const { CustomerRepository } = require("../database")
-const { FormateData, GeneratePassword, GenerateSalt, GenerateSignature, ValidatePassword } = require('../utils')
-const { APIError, STATUS_CODES } = require('../utils/errors/app-errors')
+const { GeneratePassword, GenerateSalt, GenerateSignature, ValidatePassword } = require('../utils')
+const { NotFoundError, ValidationError } = require('../utils/errors/app-errors')
 
 
 
@@ -11,93 +11,62 @@ class CustomerService {
     }
 
     async SignIn(userInputs) {
-
         const { email, password } = userInputs
 
-        try {
+        const existingCustomer = await this.repository.FindCustomer({ email })
+        if (!existingCustomer) throw new NotFoundError('User not found')
 
-            const existingCustomer = await this.repository.FindCustomer({ email })
+        const validPassword = await ValidatePassword(password, existingCustomer.password, existingCustomer.salt)
 
-            if (existingCustomer) {
+        if (!validPassword) throw new ValidationError('Password does not match')
 
-                const validPassword = await ValidatePassword(password, existingCustomer.password, existingCustomer.salt)
-
-                if (validPassword) {
-                    const token = await GenerateSignature({ email: existingCustomer.email, _id: existingCustomer._id })
-                    return FormateData({ id: existingCustomer._id, token })
-                }
-            }
-
-            return FormateData()
-
-        } catch (err) {
-            throw new APIError('Data Not found', err)
-        }
-
-
+        const token = await GenerateSignature({
+            email: existingCustomer.email,
+            _id: existingCustomer._id
+        })
+        return { id: existingCustomer._id, token }
     }
 
     async SignUp(userInputs) {
 
         const { email, password, phone } = userInputs
 
-        try {
-            // create salt
-            let salt = await GenerateSalt()
+        // create salt
+        let salt = await GenerateSalt()
 
-            let userPassword = await GeneratePassword(password, salt)
+        let userPassword = await GeneratePassword(password, salt)
 
-            const existingCustomer = await this.repository.CreateCustomer({ email, password: userPassword, phone, salt })
+        const existingCustomer = await this.repository.CreateCustomer({
+            email,
+            password: userPassword,
+            phone,
+            salt
+        })
 
-            const token = await GenerateSignature({ email: email, _id: existingCustomer._id })
+        const token = await GenerateSignature({ email: email, _id: existingCustomer._id })
 
-            return FormateData({ id: existingCustomer._id, token })
-
-        } catch (err) {
-            throw new APIError('Data Not found', STATUS_CODES.INTERNAL_ERROR)
-        }
-
+        return { id: existingCustomer._id, token }
     }
 
     async AddNewAddress(_id, userInputs) {
-
         const { street, postalCode, city, country } = userInputs
 
-        try {
-            const addressResult = await this.repository.CreateAddress({ _id, street, postalCode, city, country })
-            return FormateData(addressResult)
-
-        } catch (err) {
-            throw new APIError('Data Not found', err)
-        }
-
-
+        return this.repository.CreateAddress({ _id, street, postalCode, city, country })
     }
 
     async GetProfile(id) {
-
-        try {
-            const existingCustomer = await this.repository.FindCustomerById({ id })
-            return FormateData(existingCustomer)
-        } catch (err) {
-            throw new APIError("Unable to Find Customer", STATUS_CODES.INTERNAL_ERROR)
-        }
+        return this.repository.FindCustomerById(id)
     }
 
     async DeleteProfile(id) {
-        try {
-            const data = await this.repository.DeleteCustomerById(id)
+        const data = await this.repository.DeleteCustomerById(id)
 
-            const payload = {
-                event: 'DELETE_PROFILE',
-                data: { userId: id }
-            }
-
-            return { data, payload }
-
-        } catch (err) {
-            throw new APIError("Unable to Find Customer", STATUS_CODES.INTERNAL_ERROR)
+        const payload = {
+            event: 'DELETE_PROFILE',
+            data: { userId: id }
         }
+        
+        return { data, payload }
     }
 }
 

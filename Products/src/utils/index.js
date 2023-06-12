@@ -33,25 +33,14 @@ module.exports.GenerateSignature = async (payload) => {
 
 module.exports.ValidateSignature = async (req) => {
   try {
-    const signature = req.get("Authorization")
-    // console.log(signature)
-    const payload = await jwt.verify(signature.split(" ")[1], APP_SECRET)
+    const token = req.headers.authorization.split(' ')[1]
+    const payload = jwt.verify(token, APP_SECRET)
     req.user = payload
     return true
   } catch (error) {
-    console.log(error)
     return false
   }
 }
-
-module.exports.FormateData = (data) => {
-  if (data) {
-    return { data }
-  } else {
-    throw new Error("Data Not found!")
-  }
-}
-
 
 
 
@@ -79,14 +68,6 @@ module.exports.CreateChannel = async () => {
   }
 }
 
-module.exports.PublishMessage = async (channel, routing_key, message) => {
-  try {
-    await channel.publish(EXCHANGE_NAME, routing_key, Buffer.from(message))
-  }
-  catch (err) {
-    throw err
-  }
-}
 
 module.exports.RPC_Observer = async (RPC_QUEUE_NAME, service) => {
   const channel = await getChannel()
@@ -101,14 +82,24 @@ module.exports.RPC_Observer = async (RPC_QUEUE_NAME, service) => {
         const payload = JSON.parse(msg.content.toString())
         const response = await service.serveRPC_Request(payload)
 
-
-        channel.sendToQueue(
-          msg.properties.replyTo,
-          Buffer.from(JSON.stringify(response)),
-          {
-            correlationId: msg.properties.correlationId
-          }
-        )
+        if (response !== undefined) {
+          channel.sendToQueue(
+            msg.properties.replyTo,
+            Buffer.from(JSON.stringify(response)),
+            {
+              correlationId: msg.properties.correlationId
+            }
+          )
+        }
+        else {
+          channel.sendToQueue(
+            msg.properties.replyTo,
+            Buffer.from(JSON.stringify('undefined')),
+            {
+              correlationId: msg.properties.correlationId
+            }
+          )
+        }
         channel.ack(msg)
       }
     },

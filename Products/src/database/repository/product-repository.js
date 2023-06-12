@@ -1,27 +1,27 @@
 const { ProductModel } = require('../models')
-const { APIError } = require('../../utils/app-errors')
+const { APIError } = require('../../utils/errors/app-errors')
 
 
 class ProductRepository {
-
-  async CreateProduct({ name, desc, type, unit, price, available, suplier, banner }) {
-    try {
-      const product = new ProductModel({ name, desc, type, unit, price, available, suplier, banner })
-
-      const productResult = await product.save()
-      return productResult
-    }
-    catch (err) {
-      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Create Product')
-    }
-  }
 
   async Products() {
     try {
       return await ProductModel.find()
     }
     catch (err) {
-      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Get Products')
+      throw new APIError('DB: Unable to Get Products')
+    }
+  }
+
+  async CreateProduct({ name, desc, type, unit, price, available, suplier, banner }) {
+    try {
+      const product = new ProductModel({ name, desc, type: type.toLowerCase(), unit, price, available, suplier, banner })
+
+      const productResult = await product.save()
+      return productResult
+    }
+    catch (err) {
+      throw new APIError('DB: Unable to Create Product')
     }
   }
 
@@ -30,7 +30,7 @@ class ProductRepository {
       return await ProductModel.findById(id)
     }
     catch (err) {
-      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Product')
+      // throw new APIError('DB: Unable to Find Product')
     }
   }
 
@@ -40,7 +40,7 @@ class ProductRepository {
       return products
     }
     catch (err) {
-      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Category')
+      throw new APIError('DB: Unable to Find Products')
     }
   }
 
@@ -53,7 +53,7 @@ class ProductRepository {
       return products
     }
     catch (err) {
-      throw new APIError('API Error', STATUS_CODES.INTERNAL_ERROR, 'Unable to Find Product')
+      throw new APIError('DB: Unable to Find Products')
     }
   }
 }

@@ -1,6 +1,6 @@
-const { CustomerModel, AddressModel } = require("../models")
+const { CustomerModel, AddressModel } = require('../models')
 
-const { APIError, STATUS_CODES } = require("../../utils/errors/app-errors")
+const { APIError } = require('../../utils/errors/app-errors')
 
 
 class CustomerRepository {
@@ -12,7 +12,7 @@ class CustomerRepository {
       return customerResult
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Create Customer")
+      throw new APIError('DB: Unable to Create Customer')
     }
   }
 
@@ -29,7 +29,7 @@ class CustomerRepository {
       return await profile.save()
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Error on Create Address")
+      throw new APIError('DB: Error on Create Address')
     }
   }
 
@@ -39,30 +39,35 @@ class CustomerRepository {
       return existingCustomer
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Find Customer")
+      throw new APIError('DB: Unable to Find Customer')
     }
   }
 
-  async FindCustomerById({ id }) {
+  async FindCustomerById(id) {
     try {
       const existingCustomer = await CustomerModel.findById(id)
-        .populate("address")
+        .populate('address')
 
       return existingCustomer
     }
     catch (err) {
-      throw new APIError("API Error", STATUS_CODES.INTERNAL_ERROR, "Unable to Find Customer")
+      throw new APIError('DB: Unable to Find Customer')
     }
   }
 
   async DeleteCustomerById(id) {
-    const customer = await this.FindCustomerById({ id })
-    const ids = customer.address.map((place) => place._id)
+    try {
+      const customer = await this.FindCustomerById({ id })
+      const ids = customer.address.map((place) => place._id)
 
-    return Promise.all([
-      CustomerModel.findByIdAndDelete(id),
-      AddressModel.deleteMany({ _id: { $in: ids } })
-    ])
+      return Promise.all([
+        CustomerModel.findByIdAndDelete(id),
+        AddressModel.deleteMany({ _id: { $in: ids } })
+      ])
+    }
+    catch (err) {
+      throw new APIError('DB: Unable to delete profile')
+    }
   }
 }
 
